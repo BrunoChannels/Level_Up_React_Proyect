@@ -30,8 +30,10 @@ describe('Pruebas de HeaderComponent', () => {
 
   // 🧰 Función auxiliar para renderizar el componente con un contexto de carrito
   const renderWithCart = (cartItems = [], removeFromCart = vi.fn()) => {
+    const cartItemsCount = cartItems.reduce((acc, it) => acc + (it.qty || 1), 0)
+    const cartSubtotal = cartItems.reduce((sum, it) => sum + (Number(it.price) || 0) * (it.qty || 1), 0)
     return render(
-      <CartContext.Provider value={{ cartItems, removeFromCart }}>
+      <CartContext.Provider value={{ cartItems, cartItemsCount, removeFromCart, cartSubtotal }}>
         {/* MemoryRouter sirve para simular rutas sin necesidad de un navegador real */}
         <MemoryRouter>
           <HeaderComponent />
@@ -42,7 +44,7 @@ describe('Pruebas de HeaderComponent', () => {
 
   it('Debe mostrar el nombre de la marca en el navbar', () => {
     renderWithCart([])
-    expect(screen.getByText(/Level-up!/i)).toBeInTheDocument()
+    expect(screen.getByText(/Level-Up/i)).toBeInTheDocument()
   })
 
   it('No debe mostrar el badge si el carrito está vacío', () => {
@@ -72,7 +74,7 @@ describe('Pruebas de HeaderComponent', () => {
     await userEvent.click(toggleBtn)
 
     // Buscamos el botón de eliminar
-    const removeBtn = await screen.findByRole('button', { name: 'X' })
+    const removeBtn = await screen.findByText('×')
     await userEvent.click(removeBtn)
 
     // Verificamos que se llamó con el ID correcto
@@ -93,7 +95,7 @@ describe('Pruebas de HeaderComponent', () => {
     const payBtn = await screen.findByRole('button', { name: /Ir a pagar/i })
     await userEvent.click(payBtn)
 
-    // Verificamos que navigate('/purchase') fue llamado
-    expect(global.__vNavigateCalls).toContain('/purchase')
+    // Verificamos que navigate('/pago') fue llamado
+    expect(global.__vNavigateCalls).toContain('/pago')
   })
 })

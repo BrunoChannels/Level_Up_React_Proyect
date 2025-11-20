@@ -37,7 +37,7 @@ describe('LoginPages', () => {
 
     renderWithAuth(<LoginPages />, { authValue: { user: null, login: loginMock } });
 
-    const email = screen.getByLabelText(/email/i);
+    const email = screen.getByLabelText(/Correo electrónico/i);
     await user.type(email, 'usuario@test.com');
     expect(email).toHaveValue('usuario@test.com');
   });
@@ -48,7 +48,7 @@ describe('LoginPages', () => {
 
     renderWithAuth(<LoginPages />, { authValue: { user: null, login: loginMock } });
 
-    const pass = screen.getByLabelText(/contraseña|password/i);
+    const pass = screen.getByLabelText(/Contraseña/i);
     await user.type(pass, '123456');
     expect(pass).toHaveValue('123456');
   });
@@ -59,8 +59,8 @@ describe('LoginPages', () => {
 
     renderWithAuth(<LoginPages />, { authValue: { user: null, login: loginMock } });
 
-    await user.type(screen.getByLabelText(/email/i), 'user@test.com');
-    await user.type(screen.getByLabelText(/contraseña|password/i), 'abc123');
+    await user.type(screen.getByLabelText(/Correo electrónico/i), 'user@test.com');
+    await user.type(screen.getByLabelText(/Contraseña/i), 'abc123');
     await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
 
     expect(loginMock).toHaveBeenCalledWith({ email: 'user@test.com', password: 'abc123' });
@@ -73,11 +73,11 @@ describe('LoginPages', () => {
 
     renderWithAuth(<LoginPages />, { authValue: { user: null, login: loginMock } });
 
-    await user.type(screen.getByLabelText(/email/i), 'a@b');
-    await user.type(screen.getByLabelText(/contraseña|password/i), '123456');
+    await user.type(screen.getByLabelText(/Correo electrónico/i), 'a@b');
+    await user.type(screen.getByLabelText(/Contraseña/i), '123456');
     await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
 
-    await screen.findByText(/Por favor ingrese un correo electrónico válido/i);
+    await screen.findByText(/Por favor ingresa un correo electrónico válido/i);
     expect(loginMock).not.toHaveBeenCalled();
   });
 

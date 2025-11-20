@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { CartProvider, CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 // Un componente de prueba que consume el contexto
 function TestConsumer() {
@@ -82,4 +83,36 @@ describe('CartContext', () => {
     expect(screen.queryByTestId('item-p1')).not.toBeInTheDocument();
     expect(screen.getByTestId('list').children.length).toBe(0);
   });
+  it('carga el carrito desde el backend cuando hay usuario', async () => {
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ id: 'i1', productId: 'p1', name: 'Remoto', price: 10, qty: 1 }] }) })
+    render(
+      <AuthContext.Provider value={{ user: { id: 'u1' } }}>
+        <CartProvider>
+          <TestConsumer />
+        </CartProvider>
+      </AuthContext.Provider>
+    )
+    expect(await screen.findByTestId('item-p1')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  it('addToCart realiza POST al microservicio con body', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.spyOn(global, 'fetch')
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) })
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ id: 'i2', productId: 'p1', name: 'Producto 1', price: 100, qty: 1 }] }) })
+    render(
+      <AuthContext.Provider value={{ user: { id: 'u1' } }}>
+        <CartProvider>
+          <TestConsumer />
+        </CartProvider>
+      </AuthContext.Provider>
+    )
+    const addBtn = screen.getByRole('button', { name: /add/i })
+    await user.click(addBtn)
+    const call = fetchMock.mock.calls.find((c) => String(c[0]).includes('/items'))
+    expect(call?.[1]?.method).toBe('POST')
+    const body = JSON.parse(call?.[1]?.body)
+    expect(body.productId).toBe('p1')
+    expect(await screen.findByTestId('item-p1')).toBeInTheDocument()
+  })
 });

@@ -1,6 +1,7 @@
 import React, { useContext } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
 import { AuthProvider, AuthContext } from '../context/AuthContext.jsx'
 
 // Componente probe para testear el contexto
@@ -19,6 +20,10 @@ function Probe() {
 
 describe('AuthContext', () => {
   it('login / updateProfile / logout', async () => {
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ id: 'u1', email: 'test@demo.com' }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ id: 'u1', email: 'test@demo.com', name: 'Nuevo Nombre' }) })
+
     render(
       <AuthProvider>
         <Probe />

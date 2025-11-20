@@ -21,8 +21,13 @@ async function http(path, { method = "GET", body, token } = {}) {
   let data;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!res.ok) {
-    const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    // Devuelve el texto tal cual si no es JSON válido
+    const msg = (typeof data === 'string' ? data : (data?.message || data?.error || `HTTP ${res.status}`));
     throw new Error(msg);
+  }
+  // Si data es string (porque no era JSON válido), intentamos parsearla como JSON
+  if (typeof data === 'string' && data.trim().startsWith('{')) {
+    try { return JSON.parse(data); } catch {}
   }
   return data;
 }
@@ -65,13 +70,18 @@ export const AuthProvider = ({ children }) => {
 
   // Registro contra /api/auth/register
   const register = async ({ name, email, password }) => {
-    const data = await http("/api/auth/register", {
-      method: "POST",
-      body: { name, email, password },
-    });
-    // Opcional: loguear automáticamente después de registrar
-    persist(data);
-    return data;
+    try {
+      const data = await http("/api/auth/register", {
+        method: "POST",
+        body: { name, email, password },
+      });
+      // Opcional: loguear automáticamente después de registrar
+      persist(data);
+      return data;
+    } catch (err) {
+      // Re-lanzamos el error para que el componente lo maneje
+      throw err;
+    }
   };
 
   // Actualizar perfil contra /api/users/{id}
