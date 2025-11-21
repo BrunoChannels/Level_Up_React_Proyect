@@ -21,3 +21,19 @@ export async function getProduct(id) {
   return data;
 }
 
+// Actualiza un producto completo (PUT /{id})
+export async function updateProduct(product) {
+  const { data } = await api.put(`/api/v1/products/${product.id}`,
+    {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: Number(product.price),
+      img: product.img,
+      category: product.category,
+      stock: Number(product.stock),
+    }
+  );
+  return data;
+}
+

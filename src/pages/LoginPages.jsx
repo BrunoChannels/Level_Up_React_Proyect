@@ -15,7 +15,9 @@ function LoginPages() {
 
   // Si ya hay sesión activa, redirige automáticamente
   useEffect(() => {
-    if (user) navigate("/perfil");
+    if (!user) return;
+    const dest = user?.role === "ADMIN" ? "/admin" : "/perfil";
+    navigate(dest);
   }, [user, navigate]);
 
   // Validación de email básica
@@ -37,9 +39,9 @@ function LoginPages() {
 
     setLoading(true);
     try {
-      // Llama al backend vía AuthContext
-      await login({ email, password });
-      navigate("/perfil");
+      const logged = await login({ email, password });
+      const dest = logged?.role === "ADMIN" ? "/admin" : "/perfil";
+      navigate(dest);
     } catch (err) {
       setError(err?.message || "Error al iniciar sesión. Intenta nuevamente.");
     } finally {
