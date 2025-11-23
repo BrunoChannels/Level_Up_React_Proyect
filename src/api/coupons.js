@@ -45,7 +45,13 @@ export async function deleteCoupon(id) {
 }
 
 export async function findCouponByCode(code) {
-  const list = await getCoupons()
   const upper = String(code || '').trim().toUpperCase()
-  return list.find(c => String(c.codigo || '').toUpperCase() === upper) || null
+  if (!upper) return null
+  try {
+    const { data } = await couponsApi.get(`/api/v1/coupons/code/${upper}`)
+    return toClient(data)
+  } catch (err) {
+    if (err.response?.status === 404) return null
+    throw err
+  }
 }
