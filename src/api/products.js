@@ -37,3 +37,42 @@ export async function updateProduct(product) {
   return data;
 }
 
+// Crea un nuevo producto
+export async function createProduct(product) {
+  const payload = {
+    name: product.name,
+    description: product.description,
+    price: Number(product.price),
+    img: product.img,
+    category: product.category,
+    stock: Number(product.stock),
+  }
+  const { data } = await api.post('/api/v1/products', payload)
+  return data
+}
+
+export async function uploadProductImage(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const { data } = await api.post('/api/v1/products/image', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return data
+}
+
+export async function deleteProduct(id) {
+  await api.delete(`/api/v1/products/${id}`)
+}
+
+// Configuración de productos destacados
+export async function getFeaturedConfig() {
+  const { data } = await api.get('/api/v1/products/featured-config')
+  return data
+}
+
+export async function saveFeaturedConfig({ title, maxCount, productIds }) {
+  const payload = { title, maxCount: Number(maxCount), productIds }
+  const { data } = await api.put('/api/v1/products/featured-config', payload)
+  return data
+}
+

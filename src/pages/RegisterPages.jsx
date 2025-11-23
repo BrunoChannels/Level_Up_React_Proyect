@@ -14,7 +14,23 @@ function RegisterPages() {
     fechaNacimiento: "",
     password: "",
     password2: "",
+    address: "",
+    phone: "",
   });
+
+  // Country codes for phone selector
+  const countryCodes = [
+    { code: '+56', country: 'Chile' },
+    { code: '+1', country: 'USA/Canadá' },
+    { code: '+34', country: 'España' },
+    { code: '+54', country: 'Argentina' },
+    { code: '+55', country: 'Brasil' },
+    { code: '+52', country: 'México' },
+    { code: '+57', country: 'Colombia' },
+    { code: '+51', country: 'Perú' },
+  ];
+
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+56');
 
   const [touched, setTouched] = useState({
     nombre: false,
@@ -22,6 +38,8 @@ function RegisterPages() {
     fechaNacimiento: false,
     password: false,
     password2: false,
+    address: false,
+    phone: false,
   });
 
   const [error, setError] = useState("");
@@ -31,11 +49,28 @@ function RegisterPages() {
   // Fecha máxima (hoy) para el date input sin tocar el DOM directamente
   const maxDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  const handleChange = (e) =>
-    setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Validación para campo de teléfono: solo aceptar números
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, ''); // Eliminar todo lo que no sea número
+      setFormData((s) => ({ ...s, [name]: numericValue }));
+    } else {
+      setFormData((s) => ({ ...s, [name]: value }));
+    }
+  };
 
   const handleBlur = (field) =>
     setTouched((s) => ({ ...s, [field]: true }));
+
+  // Prevenir ingreso de caracteres no numéricos en el campo de teléfono
+  const handlePhoneKeyPress = (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+    }
+  };
 
   // Validaciones
   const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
@@ -126,11 +161,15 @@ const validateAge = (birthDate) => {
         fechaNacimiento: "",
         password: "",
         password2: "",
+        address: "",
+        phone: "",
       });
       setTouched({
         nombre: false,
         email: false,
         fechaNacimiento: false,
+        address: false,
+        phone: false,
         password: false,
         password2: false,
       });
@@ -195,6 +234,55 @@ const validateAge = (birthDate) => {
               disabled={loading}
               max={maxDate}
             />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="address">Dirección</Form.Label>
+            <div className="d-flex align-items-center gap-2">
+              <Form.Control
+                type="text"
+                id="address"
+                name="address"
+                placeholder="Calle Principal #123"
+                value={formData.address}
+                onChange={handleChange}
+                onBlur={() => handleBlur("address")}
+                required
+                disabled={loading}
+              />
+              <Form.Text className="text-light mb-0">
+                Esta dirección se utilizará para mandar las compras que realices.
+              </Form.Text>
+            </div>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="phone">Teléfono</Form.Label>
+            <div className="phone-input-group">
+              <Form.Select
+                value={selectedCountryCode}
+                onChange={(e) => setSelectedCountryCode(e.target.value)}
+                disabled={loading}
+              >
+                {countryCodes.map((country) => (
+                  <option key={country.code} value={country.code}>
+                    {country.code}
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Control
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="912345678"
+                value={formData.phone}
+                onChange={handleChange}
+                onBlur={() => handleBlur("phone")}
+                onKeyPress={handlePhoneKeyPress}
+                required
+                disabled={loading}
+              />
+            </div>
           </Form.Group>
 
           <Form.Group className="mb-3">

@@ -11,6 +11,12 @@ import LoginPages from './pages/LoginPages';
 import PurchasePages from './pages/PurchasePages';
 import AdminPages from './pages/AdminPages.jsx';
 import InventoryManagementPages from './pages/InventoryManagementPages.jsx';
+import MarketManagementPages from './pages/MarketManagementPages.jsx';
+import UserManagementPages from './pages/UserManagementPages.jsx';
+import AddAdminPages from './pages/AddAdminPages.jsx';
+import AddNewProduct from './pages/AddNewProduct.jsx';
+import CouponsManagement from './pages/CouponsManagement.jsx';
+import AddCoupon from './pages/AddCoupon.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -41,6 +47,12 @@ export default function App() {
             <Route path='/perfil' element={<ProtectedRoute><PerfilPages /></ProtectedRoute>} />
             <Route path='/admin' element={<ProtectedRoute><AdminPages /></ProtectedRoute>} />
             <Route path='/admin/inventario' element={<ProtectedRoute><InventoryManagementPages /></ProtectedRoute>} />
+            <Route path='/admin/ventas' element={<ProtectedRoute><MarketManagementPages /></ProtectedRoute>} />
+            <Route path='/admin/usuarios' element={<ProtectedRoute><UserManagementPages /></ProtectedRoute>} />
+            <Route path='/admin/usuarios/nuevo' element={<ProtectedRoute><AddAdminPages /></ProtectedRoute>} />
+            <Route path='/admin/productos/nuevo' element={<ProtectedRoute><AddNewProduct /></ProtectedRoute>} />
+            <Route path='/admin/cupones' element={<ProtectedRoute><CouponsManagement /></ProtectedRoute>} />
+            <Route path='/admin/cupones/nuevo' element={<ProtectedRoute><AddCoupon /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

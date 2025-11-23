@@ -1,9 +1,10 @@
 // src/pages/PurchasePages.jsx
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
-import "../App.css"; // Asegúrate de que aquí esté el CSS que pegaste
+import "../App.css";
+import { findCouponByCode } from "../api/coupons";
 
 const API_URL =
   import.meta.env.VITE_PURCHASE_API_URL ??
@@ -25,6 +26,22 @@ export default function PurchasePages() {
   const [error, setError]   = useState("");
   const [success, setSuccess] = useState("");
   const [expiryError, setExpiryError] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  const duocEligible = String(user?.email || '').toLowerCase().endsWith('@duocuc.cl');
+  const duocPercent = duocEligible ? 20 : 0;
+  const discountPercent = appliedCoupon?.porcentajeDescuento ? Number(appliedCoupon.porcentajeDescuento) : 0;
+  const totalDiscountPercent = Math.max(duocPercent, discountPercent);
+  const discountAmount = useMemo(() => {
+    const subtotal = Number(cartSubtotal || 0);
+    return Math.round(subtotal * (totalDiscountPercent / 100));
+  }, [cartSubtotal, totalDiscountPercent]);
+  const totalWithDiscount = useMemo(() => {
+    const subtotal = Number(cartSubtotal || 0);
+    return Math.max(0, subtotal - discountAmount);
+  }, [cartSubtotal, discountAmount]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -86,12 +103,20 @@ export default function PurchasePages() {
         },
         body: JSON.stringify({
           userId: user.id,
-          items: cartItems.map(it => ({
-            productId: Number(it.productId ?? it.id),
-            nombre: it.name,
-            cantidad: Number(it.qty ?? 1),
-            price: Math.round(Number(it.price) || 0),
-          })),
+          items: cartItems.map(it => {
+            const basePrice = Number(it.price) || 0;
+            const price = totalDiscountPercent > 0
+              ? Math.round(basePrice * (1 - totalDiscountPercent / 100))
+              : Math.round(basePrice);
+            return {
+              productId: Number(it.productId ?? it.id),
+              nombre: it.name,
+              cantidad: Number(it.qty ?? 1),
+              price,
+            };
+          }),
+          coupon: appliedCoupon ? { codigo: appliedCoupon.codigo, porcentaje: discountPercent } : null,
+          duocBenefit: duocEligible ? { porcentaje: duocPercent } : null,
           payment: {
             cardName: payment.cardName,
             cardNumber: payment.cardNumber.replace(/\s/g, ""),
@@ -114,6 +139,25 @@ export default function PurchasePages() {
       setError(err?.message || "Error en el pago");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyCoupon = async () => {
+    setCouponError("");
+    setAppliedCoupon(null);
+    const code = String(couponCode || "").trim();
+    if (!code) { setCouponError("Ingresa un código de cupón"); return; }
+    try {
+      const c = await findCouponByCode(code);
+      if (!c) { setCouponError("Cupon Inválido"); return; }
+      const estado = String(c.estado || "").toUpperCase();
+      if (estado !== "HABILITADO") { setCouponError("Cupon Deshabilitado"); return; }
+      setAppliedCoupon(c);
+    } catch (e) {
+      const msg = e?.message === 'Network Error'
+        ? 'No se pudo conectar con CouponsService (puerto 8084).'
+        : (e?.message || 'Error al validar cupón');
+      setCouponError(msg);
     }
   };
 
@@ -152,7 +196,35 @@ export default function PurchasePages() {
                       </button>
                     </div>
                   ))}
-                  <div className="cart-total">Total: ${cartSubtotal.toLocaleString("es-CL")}</div>
+                  <div className="cart-total">Subtotal: ${cartSubtotal.toLocaleString("es-CL")}</div>
+                  <div className="mt-2">
+                    <label className="form-label">Ingresar cupón</label>
+                    <div className="d-flex gap-2">
+                      <input
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase().replace(/[^A-Za-z0-9-]/g, ''))}
+                        className="form-control"
+                        placeholder="Ej: DESCUENTO10"
+                        style={{ maxWidth: 240 }}
+                      />
+                      <button type="button" className="btn btn-outline-light" onClick={applyCoupon}>Aplicar cupón</button>
+                    </div>
+                    {couponError && <small className="text-danger">{couponError}</small>}
+                    {appliedCoupon && (
+                      <div className="mt-2">
+                        <small className="text-success">Cupón aplicado: {appliedCoupon.codigo} (-{discountPercent}%)</small>
+                      </div>
+                    )}
+                    {duocEligible && (
+                      <div className="mt-2">
+                        <small className="text-success">Por ser usuario DUOCUC, usted tiene un 20% de Descuento!</small>
+                      </div>
+                    )}
+                  </div>
+                  {totalDiscountPercent > 0 && (
+                    <div className="cart-total">Descuento: -${discountAmount.toLocaleString("es-CL")}</div>
+                  )}
+                  <div className="cart-total">Total: ${totalWithDiscount.toLocaleString("es-CL")}</div>
                 </>
               )}
             </div>

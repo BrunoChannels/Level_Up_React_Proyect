@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Container, Table, Button, Form, Spinner, Alert } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { getProducts, updateProduct } from '../api/products'
+import { getProducts, updateProduct, deleteProduct } from '../api/products'
+import { FaTrash } from 'react-icons/fa'
 
 export default function InventoryManagementPages() {
   const navigate = useNavigate()
@@ -83,7 +84,7 @@ export default function InventoryManagementPages() {
   return (
     <Container className="page-container">
       <h2>Gestión de Inventario</h2>
-      <p className="text-muted">Edita valores en línea. Los cambios se guardan al salir del campo y también con "Aplicar cambios".</p>
+      <p className="inventory-help-text">Edita valores en línea. Los cambios se guardan al salir del campo y también con "Aplicar cambios".</p>
 
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {success && <Alert variant="success" className="mb-3">{success}</Alert>}
@@ -96,6 +97,7 @@ export default function InventoryManagementPages() {
             <thead>
               <tr>
                 {columns.map(col => (<th key={col.key}>{col.label}</th>))}
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -131,10 +133,32 @@ export default function InventoryManagementPages() {
                       )}
                     </td>
                   ))}
+                  <td style={{ minWidth: 100 }}>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={async () => {
+                        const ok = window.confirm(`¿Estás seguro que desea eliminar el producto ${row.name}? Sus datos no podrán recuperarse.`)
+                        if (!ok) return
+                        setError('')
+                        setSuccess('')
+                        try {
+                          await deleteProduct(row.id)
+                          setRows(prev => prev.filter(r => r.id !== row.id))
+                          setSuccess(`Producto eliminado: ${row.name}`)
+                        } catch (e) {
+                          setError(e?.message || 'No se pudo eliminar el producto')
+                        }
+                      }}
+                      title="Eliminar producto"
+                    >
+                      <FaTrash />
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={columns.length} className="text-center">Sin productos</td></tr>
+                <tr><td colSpan={columns.length + 1} className="text-center">Sin productos</td></tr>
               )}
             </tbody>
           </Table>

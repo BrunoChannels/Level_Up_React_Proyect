@@ -25,7 +25,17 @@ export default function HeaderComponent() {
             <Nav.Link as={Link} to="/productos">Productos</Nav.Link>
             <Nav.Link as={Link} to="/registro">Registrarse</Nav.Link>
             {user ? (
-              <Nav.Link as={Link} to="/perfil">Perfil</Nav.Link>
+              ['ADMIN','BODEGUERO','VENTAS'].includes((user.role || '').toUpperCase()) ? (
+                <Button
+                  variant="success"
+                  className="ms-2"
+                  onClick={() => navigate('/admin')}
+                >
+                  ADMIN
+                </Button>
+              ) : (
+                <Nav.Link as={Link} to="/perfil">Perfil</Nav.Link>
+              )
             ) : (
               <Nav.Link as={Link} to="/login">Iniciar Sesión</Nav.Link>
             )}

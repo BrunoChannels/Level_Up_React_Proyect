@@ -1,9 +1,57 @@
-import React from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import GoogleMapComponent from '../components/GoogleMapsComponent';
-import { Carousel } from 'react-bootstrap';
+import { Carousel, Card, Row, Col, Button } from 'react-bootstrap';
+import { CartContext } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { getProducts, getFeaturedConfig } from '../api/products';
+
+const PLACEHOLDER = "/assets/img/placeholder.png";
 
 function HomePages() {
+  const { addToCart } = useContext(CartContext);
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const [errorFeatured, setErrorFeatured] = useState(null);
+  const [featuredTitle, setFeaturedTitle] = useState('Productos Más Vendidos 🔥');
+  const [featuredIds, setFeaturedIds] = useState([]);
+  const [featuredMaxCount, setFeaturedMaxCount] = useState(4);
+
+  const formatPrice = (value) =>
+    Number(value).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        setLoadingFeatured(true);
+        setErrorFeatured(null);
+        const [data, cfg] = await Promise.all([
+          getProducts(),
+          getFeaturedConfig()
+        ]);
+        setProducts(Array.isArray(data) ? data : []);
+        setFeaturedTitle(cfg?.title || 'Productos Más Vendidos 🔥');
+        setFeaturedIds(Array.isArray(cfg?.productIds) ? cfg.productIds : []);
+        setFeaturedMaxCount(Number(cfg?.maxCount || 4));
+      } catch (e) {
+        setErrorFeatured('No se pudo cargar productos destacados');
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+    cargar();
+  }, []);
+
+  const productosMasVendidos = useMemo(() => {
+    const ids = featuredIds;
+    const map = new Map(products.map(p => [p.id, p]));
+    const ordered = ids
+      .map(id => map.get(id))
+      .filter(p => p && Number(p.stock ?? 0) > 0);
+    return ordered.slice(0, featuredMaxCount);
+  }, [products, featuredIds, featuredMaxCount]);
+
   return (
     <main>
       <div className="container">
@@ -35,6 +83,47 @@ function HomePages() {
             </Carousel.Caption>
           </Carousel.Item>
         </Carousel>
+        {/* Sección Productos Más Vendidos */}
+        <div className="mb-5">
+          <h2 className="text-center mb-4">{featuredTitle}</h2>
+          {errorFeatured && (
+            <p className="text-center" style={{color:'red'}}>⚠ {errorFeatured}</p>
+          )}
+          <Row className="g-3">
+            {loadingFeatured ? (
+              <p className="text-center">Cargando productos destacados...</p>
+            ) : productosMasVendidos.length > 0 ? (
+              productosMasVendidos.map((product) => (
+                <Col key={product.id} xs={6} md={3}>
+                  <Card
+                    className="h-100 shadow-sm product-card"
+                    onClick={() => navigate(`/productos/${product.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Card.Img
+                      variant="top"
+                      src={product.img || PLACEHOLDER}
+                      style={{ height: '200px', objectFit: 'contain' }}
+                    />
+                    <Card.Body className="d-flex flex-column">
+                      <Card.Title>{product.name}</Card.Title>
+                      <Card.Text style={{ flex: 1 }}>{product.description}</Card.Text>
+                      <Card.Text className="fw-bold">{formatPrice(product.price)}</Card.Text>
+                      <Button
+                        variant="success"
+                        onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                      >
+                        Agregar al Carrito
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))
+            ) : (
+              <p className="text-center">No hay productos destacados disponibles.</p>
+            )}
+          </Row>
+        </div>
       </div>
       {/* Sección Quiénes Somos / Misión / Visión */}
       <section className="row mt-4">

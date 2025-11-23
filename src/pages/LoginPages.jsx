@@ -16,7 +16,8 @@ function LoginPages() {
   // Si ya hay sesión activa, redirige automáticamente
   useEffect(() => {
     if (!user) return;
-    const dest = user?.role === "ADMIN" ? "/admin" : "/perfil";
+    const r = (user?.role || '').toUpperCase()
+    const dest = (r === 'ADMIN' || r === 'BODEGUERO' || r === 'VENTAS') ? "/admin" : "/perfil";
     navigate(dest);
   }, [user, navigate]);
 
@@ -40,7 +41,8 @@ function LoginPages() {
     setLoading(true);
     try {
       const logged = await login({ email, password });
-      const dest = logged?.role === "ADMIN" ? "/admin" : "/perfil";
+      const r = (logged?.role || '').toUpperCase();
+      const dest = (r === 'ADMIN' || r === 'BODEGUERO' || r === 'VENTAS') ? "/admin" : "/perfil";
       navigate(dest);
     } catch (err) {
       setError(err?.message || "Error al iniciar sesión. Intenta nuevamente.");
